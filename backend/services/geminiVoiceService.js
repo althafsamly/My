@@ -195,12 +195,14 @@ JSON format:
 }`;
 
   const candidateModels = [
-    process.env.GEMINI_MODEL,
-    "gemini-3.5-flash-lite",
-    "gemini-3.7-flash",
-    "gemini-3.5-flash",
-    "gemini-3.6-flash",
-  ].filter(Boolean);
+    ...new Set([
+      process.env.GEMINI_MODEL,
+      "gemini-3.6-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-3.7-flash",
+      "gemini-3.5-flash",
+    ].filter(Boolean)),
+  ];
 
   for (const model of candidateModels) {
     try {
@@ -216,7 +218,7 @@ JSON format:
             responseMimeType: "application/json",
           },
         }),
-        signal: AbortSignal.timeout(6000),
+        signal: AbortSignal.timeout(20000),
       });
 
       if (response.ok) {

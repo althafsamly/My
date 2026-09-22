@@ -59,14 +59,15 @@ JSON format:
   }
 ]`;
 
-  // Candidate models: prioritizing fast, available models with fallback
   const candidateModels = [
-    process.env.GEMINI_MODEL,
-    "gemini-3.5-flash-lite",
-    "gemini-3.7-flash",
-    "gemini-3.5-flash",
-    "gemini-3.6-flash",
-  ].filter(Boolean);
+    ...new Set([
+      process.env.GEMINI_MODEL,
+      "gemini-3.6-flash",
+      "gemini-3.5-flash-lite",
+      "gemini-3.7-flash",
+      "gemini-3.5-flash",
+    ].filter(Boolean)),
+  ];
 
   let data = null;
   let lastError = null;
@@ -91,7 +92,7 @@ JSON format:
             responseMimeType: "application/json",
           },
         }),
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(20000),
       });
 
       if (response.ok) {

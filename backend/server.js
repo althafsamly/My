@@ -1,7 +1,11 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const dns = require("dns");
 require("dotenv").config();
+
+// Ensure Node resolves MongoDB Atlas SRV records using public DNS if local ISP DNS fails
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 const authRoutes = require("./routes/authRoutes");
 const tripRoutes = require("./routes/tripRoutes");
