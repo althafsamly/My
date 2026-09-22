@@ -1217,6 +1217,62 @@
 .voice-btn-container {
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+.voice-stop-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 750;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3);
+}
+
+.voice-stop-btn:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(220, 38, 38, 0.4);
+}
+
+.voice-stop-btn:active {
+  transform: translateY(0);
+}
+
+.voice-stop-btn.text-mode-stop {
+  padding: 12px 18px;
+  font-size: 14px;
+}
+
+.extracted-audio-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.voice-stop-btn.small-stop {
+  padding: 4px 10px;
+  font-size: 11.5px;
+  border-radius: 7px;
+  box-shadow: none;
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.voice-stop-btn.small-stop:hover {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
 }
 
 .voice-record-btn {

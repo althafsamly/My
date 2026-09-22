@@ -65,6 +65,7 @@ function PlanTrip() {
   const [speechSupported, setSpeechSupported] = useState(true);
 
   const recognitionRef = useRef(null);
+  const abortControllerRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -96,6 +97,33 @@ function PlanTrip() {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
     }
+  }
+
+  // Stop all active Voice AI operations (listening, backend parsing fetch, and speech audio playback)
+  function handleStopVoiceAI() {
+    // 1. Abort backend fetch request if pending
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+
+    // 2. Abort speech recognition if active
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.onend = null; // Prevent onend from triggering handleProcessVoiceTranscript
+        recognitionRef.current.abort();
+      } catch (e) {
+        console.warn("Speech recognition abort error:", e);
+      }
+      recognitionRef.current = null;
+    }
+
+    // 3. Cancel TTS SpeechSynthesis audio
+    stopSpeaking();
+
+    // 4. Reset voice state to idle with explicit user feedback
+    setVoiceState("idle");
+    setTranscriptText("Voice AI stopped. Tap to speak or type your plan.");
   }
 
   // Instant Local Heuristic Parser (Fast Offline Fallback)
@@ -239,6 +267,13 @@ function PlanTrip() {
   async function handleProcessVoiceTranscript(rawText) {
     if (!rawText || !rawText.trim()) return;
 
+    // Abort previous backend fetch if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setVoiceState("processing");
     setTranscriptText(`"${rawText}"`);
 
@@ -251,6 +286,7 @@ function PlanTrip() {
       const response = await fetch("http://localhost:5000/api/trips/parse-voice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           transcript: rawText,
           currentDate: new Date().toISOString().split("T")[0],
@@ -266,18 +302,26 @@ function PlanTrip() {
           if (data.plan.voiceConfirmation) {
             speakVoiceResponse(data.plan.voiceConfirmation);
           }
+          abortControllerRef.current = null;
           return;
         }
       }
     } catch (err) {
+      if (err.name === "AbortError") {
+        console.log("[Voice AI] Backend parse request aborted by user.");
+        return;
+      }
       console.warn("Backend Gemini voice parse error, keeping local plan:", err);
     }
 
-    // Fallback to local plan if backend was unreachable
-    setExtractedPlan(localPlan);
-    setVoiceState("success");
-    if (localPlan.voiceConfirmation) {
-      speakVoiceResponse(localPlan.voiceConfirmation);
+    if (abortControllerRef.current === controller) {
+      // Fallback to local plan if backend was unreachable
+      setExtractedPlan(localPlan);
+      setVoiceState("success");
+      if (localPlan.voiceConfirmation) {
+        speakVoiceResponse(localPlan.voiceConfirmation);
+      }
+      abortControllerRef.current = null;
     }
   }
 
@@ -1086,6 +1130,20 @@ function PlanTrip() {
                         </>
                       )}
                     </button>
+
+                    {(voiceState === "listening" || voiceState === "processing" || isSpeaking) && (
+                      <button
+                        type="button"
+                        className="voice-stop-btn"
+                        onClick={handleStopVoiceAI}
+                        title="Stop Voice AI Operation"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <rect x="5" y="5" width="14" height="14" rx="2" />
+                        </svg>
+                        <span>Stop</span>
+                      </button>
+                    )}
                   </div>
 
                   {transcriptText && (
@@ -1116,6 +1174,19 @@ function PlanTrip() {
                   >
                     {voiceState === "processing" ? "Parsing..." : "Apply Plan →"}
                   </button>
+                  {(voiceState === "listening" || voiceState === "processing" || isSpeaking) && (
+                    <button
+                      type="button"
+                      className="voice-stop-btn text-mode-stop"
+                      onClick={handleStopVoiceAI}
+                      title="Stop Voice AI Operation"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="5" y="5" width="14" height="14" rx="2" />
+                      </svg>
+                      <span>Stop</span>
+                    </button>
+                  )}
                 </form>
               )}
 
@@ -1124,21 +1195,36 @@ function PlanTrip() {
                 <div className="voice-extracted-summary">
                   <div className="extracted-header">
                     <span className="extracted-status-badge">Preferences Auto-Filled</span>
-                    {extractedPlan.voiceConfirmation && (
-                      <button
-                        type="button"
-                        className="voice-replay-btn"
-                        onClick={() => {
-                          if (isSpeaking) {
-                            stopSpeaking();
-                          } else {
-                            speakVoiceResponse(extractedPlan.voiceConfirmation);
-                          }
-                        }}
-                      >
-                        {isSpeaking ? "Stop Audio" : "Replay AI Audio"}
-                      </button>
-                    )}
+                    <div className="extracted-audio-actions">
+                      {extractedPlan.voiceConfirmation && (
+                        <button
+                          type="button"
+                          className="voice-replay-btn"
+                          onClick={() => {
+                            if (isSpeaking) {
+                              stopSpeaking();
+                            } else {
+                              speakVoiceResponse(extractedPlan.voiceConfirmation);
+                            }
+                          }}
+                        >
+                          {isSpeaking ? "Stop Audio" : "Replay AI Audio"}
+                        </button>
+                      )}
+                      {isSpeaking && (
+                        <button
+                          type="button"
+                          className="voice-stop-btn small-stop"
+                          onClick={handleStopVoiceAI}
+                          title="Stop AI Voice Audio"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="5" y="5" width="14" height="14" rx="2" />
+                          </svg>
+                          <span>Stop Voice</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="extracted-chips">
                     <span className="extracted-chip dest">{extractedPlan.destination}</span>
