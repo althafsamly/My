@@ -6,6 +6,7 @@ import {
   getLocalDestinationFallback,
   getDestinationPhotos,
 } from "../utils/activityImages";
+import EmergencySOSModal from "../components/EmergencySOSModal";
 import "./TripResult.css";
 
 // Dynamic database for destination-specific Map, Food, and Vehicle data
@@ -34,6 +35,17 @@ const locationData = {
       { type: "Self-Drive Tuk-Tuk", rate: "Rs. 6,000/day", badge: "Adventure", reason: "Fun coastal exploration & surf point hopping" },
     ],
   },
+  weligama: {
+    coords: { lat: 5.9734, lng: 80.4286 },
+    foodSpots: [
+      { name: "Nomad Cafe", type: "Healthy Bowls & Coffee", specialty: "Avocado toasts and smoothies" },
+      { name: "Fish Point Weligama", type: "Seafood", specialty: "Grilled catch of the day" },
+    ],
+    vehicles: [
+      { type: "Scooter", rate: "Rs. 3,500/day", badge: "Surf Hopping", reason: "Easy beach and surf point hopping", isRecommended: true },
+      { type: "Self-Drive Tuk-Tuk", rate: "Rs. 6,000/day", badge: "Adventure", reason: "Fun coastal touring" },
+    ],
+  },
   ella: {
     coords: { lat: 6.8667, lng: 81.0466 },
     foodSpots: [
@@ -57,6 +69,15 @@ const locationData = {
       { type: "Self-Drive Tuk-Tuk", rate: "Rs. 6,000/day", badge: "Adventure Pick", reason: "Fun rural exploration, scenic mountain drives", isRecommended: true },
       { type: "Private Car with Driver", rate: "Rs. 14,000/day", badge: "Family", reason: "Winding roads, air-conditioned Cultural Triangle comfort" },
       { type: "Scooter", rate: "Rs. 3,500/day", badge: "Solo / Couple", reason: "Scenic village routes and rock fortress hopping" },
+    ],
+  },
+  dambulla: {
+    coords: { lat: 7.8682, lng: 80.6517 },
+    foodSpots: [
+      { name: "Bentota Bake House Dambulla", type: "Bakery & Local", specialty: "Fresh short eats & rice and curry" },
+    ],
+    vehicles: [
+      { type: "Private Car with Driver", rate: "Rs. 14,000/day", badge: "Comfort", reason: "Air conditioned exploration of ancient sites", isRecommended: true },
     ],
   },
   kandy: {
@@ -94,6 +115,24 @@ const locationData = {
       { type: "Self-Drive Tuk-Tuk", rate: "Rs. 5,000/day", badge: "Adventure", reason: "Fun urban exploration along Marine Drive" },
     ],
   },
+  negombo: {
+    coords: { lat: 7.2118, lng: 79.8398 },
+    foodSpots: [
+      { name: "Lords Restaurant", type: "Seafood & Grill", specialty: "Lagoon prawns & fish curries" },
+    ],
+    vehicles: [
+      { type: "PickMe / Uber App", rate: "Metered", badge: "Airport / City", reason: "Convenient airport & beach transport", isRecommended: true },
+    ],
+  },
+  bentota: {
+    coords: { lat: 6.4259, lng: 79.9958 },
+    foodSpots: [
+      { name: "Mallis Seafood", type: "Riverfront Dining", specialty: "Fresh river catch & crab" },
+    ],
+    vehicles: [
+      { type: "Scooter", rate: "Rs. 3,500/day", badge: "Coastal", reason: "River & beach hopping", isRecommended: true },
+    ],
+  },
   galle: {
     coords: { lat: 6.0535, lng: 80.2210 },
     foodSpots: [
@@ -116,6 +155,16 @@ const locationData = {
       { type: "Scooter", rate: "Rs. 3,500/day", badge: "Solo / Couple Pick", reason: "Coastal roads, easy beach hopping", isRecommended: true },
       { type: "Self-Drive Tuk-Tuk", rate: "Rs. 5,500/day", badge: "Adventure", reason: "Fun rural exploration & Nilaveli beach hopping" },
       { type: "Private Car with Driver", rate: "Rs. 14,000/day", badge: "Family / Group", reason: "Long-distance coastal travel for families" },
+    ],
+  },
+  jaffna: {
+    coords: { lat: 9.6615, lng: 80.0255 },
+    foodSpots: [
+      { name: "Mangos Indian Veg", type: "South Indian & Jaffna", specialty: "Crispy dosas & Jaffna meals" },
+      { name: "Rio Ice Cream", type: "Famous Dessert", specialty: "Special sundae & falooda" },
+    ],
+    vehicles: [
+      { type: "Scooter", rate: "Rs. 3,500/day", badge: "Peninsula Tour", reason: "Great for visiting islands & causeways", isRecommended: true },
     ],
   },
 };
@@ -457,6 +506,7 @@ function TripResult() {
   const navigate = useNavigate();
   const [saveStatus, setSaveStatus] = useState("idle");
   const [saveMessage, setSaveMessage] = useState("");
+  const [isSosModalOpen, setIsSosModalOpen] = useState(false);
 
   async function handleSaveTrip() {
     const token = localStorage.getItem("token");
@@ -1020,6 +1070,26 @@ function TripResult() {
           <Link to="/plan-trip">← Plan Another Trip</Link>
         </div>
       </div>
+
+      {/* Floating SOS Trigger Button */}
+      <button
+        type="button"
+        className="floating-sos-trigger"
+        onClick={() => setIsSosModalOpen(true)}
+        title="Open Emergency SOS"
+      >
+        <span className="floating-sos-pulse" />
+        <span className="floating-sos-icon">🚨</span>
+        <span className="floating-sos-text">EMERGENCY SOS</span>
+      </button>
+
+      {/* Emergency SOS Modal (faithfully matching reference UI) */}
+      <EmergencySOSModal
+        isOpen={isSosModalOpen}
+        onClose={() => setIsSosModalOpen(false)}
+        destination={trip.destination}
+        destinationCoords={currentDestData.coords}
+      />
     </div>
   );
 }
